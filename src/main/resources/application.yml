@@ -1,0 +1,103 @@
+#####################################################
+################# Spring properties #################
+#####################################################
+
+spring:
+  application:
+    name: money-transfer-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimumIdle: 2
+      idleTimeout: 120000
+      maxLifetime: 900000
+  jpa:
+    hibernate:
+      ddl-auto: none
+  liquibase:
+    enabled: true
+    change-log: classpath:db/liquibase-changelog.xml
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  redis:
+    redisson:
+      config: |
+        singleServerConfig:
+          connectTimeout: 2000
+          timeout: 2000
+          retryAttempts: 5
+          retryInterval: 500
+          password: ${spring.redis.password:null}
+          address: "redis://${REDIS_HOST}:${REDIS_PORT:6379}"
+          database: ${REDIS_DATABASE_INDEX}
+  data:
+    redis:
+      repositories:
+        enabled: false
+  task:
+    execution:
+      shutdown:
+        await-termination: true
+        await-termination-period: 30s
+    scheduling:
+      pool:
+        size: 3
+      shutdown:
+        await-termination: true
+        await-termination-period: 30s
+
+management:
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: money-transfer-service
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: ping, diskSpace, db, rabbit, redis
+          show-components: always
+        liveness:
+          include: ping, diskSpace, rabbit
+          show-components: always
+      status:
+        http-mapping:
+          DOWN: 499
+      enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+    enabled-by-default: false
+
+
+#####################################################
+################# Server properties #################
+#####################################################
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  shutdown: graceful
+
+#####################################################
+################ Swagger properties #################
+#####################################################
+swagger:
+  enabled: ${SWAGGER_ENABLED:true}
